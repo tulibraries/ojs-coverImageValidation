@@ -29,7 +29,9 @@ check with `php -n`. Each run checks out only the pkp-lib source pinned by OJS
 The regression suite includes rejected HTML replacements, mixed-language covers
 (including reversed locale order), and requests without an authenticated file
 owner. The valid-image tests ensure image uploads remain supported. The site-wide tests use the real OJS LazyLoadPlugin and GenericPlugin classes
-to verify context-0 settings across current and future journals. Base plugin
+to verify mandatory protection across current and future journals, even with
+disabled or absent settings, and refusal of direct disable calls. Descriptor
+checks verify site-wide non-lazy loading. Base plugin
 settings, account, storage, and publication objects are stand-ins; this is not a complete OJS API
 or draft-permission integration test. Keep the browser-based QA draft test in
 README.md as the deployment acceptance check.
