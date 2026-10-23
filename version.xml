@@ -3,8 +3,9 @@
 <version>
     <application>coverImageValidation</application>
     <type>plugins.generic</type>
-    <release>1.0.0.0</release>
+    <release>1.1.0.0</release>
     <date>2026-10-23</date>
     <lazy-load>1</lazy-load>
+    <sitewide>1</sitewide>
     <class>CoverImageValidationPlugin</class>
 </version>

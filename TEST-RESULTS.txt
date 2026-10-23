@@ -1,4 +1,4 @@
-Isolated PHP 8.3 CLI tests with GD/Fileinfo and the real OJS 3.4.0-9 Hook dispatcher. Account/storage objects are stand-ins; this is not a live OJS integration test.
+Isolated PHP 8.3 CLI tests with GD/Fileinfo and the real OJS 3.4.0-9 Hook, LazyLoadPlugin, and GenericPlugin classes. Base plugin settings/storage and account objects are stand-ins; this is not a live OJS integration test.
 
 PASS: accept valid png
 PASS: accept valid jpeg
@@ -14,6 +14,9 @@ PASS: reject missing file
 PASS: enforce byte limit
 PASS: enforce pixel limit
 PASS: reject undecodable PNG
+PASS: plugin is site-wide
+PASS: site enable overrides disabled journal setting using real OJS LazyLoadPlugin
+PASS: installer receives site defaults file
 PASS: real OJS hook propagates HTML rejection
 PASS: hook accepts valid owned image
 PASS: ordinary metadata unaffected
@@ -24,10 +27,18 @@ PASS: reject unknown temporary ID
 PASS: reject malformed temporary ID
 PASS: validate every submitted locale
 PASS: reject direct filename on new publication
+PASS: reject HTML replacement without changing the existing cover
+PASS: valid first locale does not bypass HTML validation in another locale
+PASS: locale order does not change the rejection
+PASS: reject new upload without an authenticated owner
 PASS: permit existing cover alt-text edit
 PASS: reject replacement filename without upload
 PASS: preserve prior validation errors
-PASS: disabled plugin does not register validation
+PASS: site-enabled validation protects another journal without a journal setting
+PASS: site-enabled validation protects a newly created journal
+PASS: disabling uses site context through real OJS LazyLoadPlugin
+PASS: site disable overrides enabled journal setting
+PASS: old journal enable alone does not substitute for site installation
 
 PHP -n without GD/Fileinfo:
 PASS: missing GD/Fileinfo fails closed

@@ -14,10 +14,22 @@ class CoverImageValidationPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         $success = parent::register($category, $path, $mainContextId);
-        if ($success && $this->getEnabled($mainContextId)) {
+        // For a site plugin, omitting the context makes OJS read context 0.
+        // Passing a journal ID would read an obsolete journal-level setting.
+        if ($success && $this->getEnabled()) {
             Hook::add('Publication::validate', [$this, 'validateCoverImage']);
         }
         return $success;
+    }
+
+    public function isSitePlugin()
+    {
+        return true;
+    }
+
+    public function getInstallSitePluginSettingsFile()
+    {
+        return $this->getPluginPath() . '/settings.xml';
     }
 
     public function getDisplayName()
