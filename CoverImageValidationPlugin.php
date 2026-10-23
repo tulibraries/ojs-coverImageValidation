@@ -14,9 +14,8 @@ class CoverImageValidationPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         $success = parent::register($category, $path, $mainContextId);
-        // For a site plugin, omitting the context makes OJS read context 0.
-        // Passing a journal ID would read an obsolete journal-level setting.
-        if ($success && $this->getEnabled()) {
+        // Mandatory protection: register regardless of saved enabled settings.
+        if ($success) {
             Hook::add('Publication::validate', [$this, 'validateCoverImage']);
         }
         return $success;
@@ -25,6 +24,28 @@ class CoverImageValidationPlugin extends GenericPlugin
     public function isSitePlugin()
     {
         return true;
+    }
+
+    /** Mandatory protection has no journal or site-level off switch. */
+    public function getEnabled($contextId = null)
+    {
+        return true;
+    }
+
+    public function getCanEnable()
+    {
+        return false;
+    }
+
+    public function getCanDisable()
+    {
+        return false;
+    }
+
+    public function setEnabled($enabled)
+    {
+        // Also resist direct calls that bypass the plugin-grid capability check.
+        parent::setEnabled(true);
     }
 
     public function getInstallSitePluginSettingsFile()

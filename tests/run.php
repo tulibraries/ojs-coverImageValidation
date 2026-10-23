@@ -122,7 +122,7 @@ namespace {
         Plugin::$settings = [0 => ['enabled' => true], 11 => ['enabled' => false]];
         $plugin->register('generic', 'plugins/generic/coverImageValidation', 11);
         check($plugin->isSitePlugin(), 'plugin is site-wide');
-        check($plugin->getEnabled(), 'site enable overrides disabled journal setting using real OJS LazyLoadPlugin');
+        check($plugin->getEnabled(), 'mandatory validation reports enabled despite disabled journal setting');
         check($plugin->getInstallSitePluginSettingsFile() === 'plugins/generic/coverImageValidation/settings.xml', 'installer receives site defaults file');
         function validateProps($props, $publication = null, $existingErrors = []) {
             $errors = $existingErrors;
@@ -177,15 +177,21 @@ namespace {
         Hook::clear('Publication::validate');
         $disabled = new CoverImageValidationPlugin();
         $disabled->setEnabled(false);
-        check(Plugin::$settings[0]['enabled'] === false && Plugin::$settings[11]['enabled'] === false, 'disabling uses site context through real OJS LazyLoadPlugin');
+        check(Plugin::$settings[0]['enabled'] === true && Plugin::$settings[11]['enabled'] === false, 'direct disable call keeps site enabled');
+        check(!$disabled->getCanDisable(), 'OJS disable endpoint capability is denied');
+        check(!$disabled->getCanEnable(), 'OJS enable toggle is unavailable');
+        Plugin::$settings[0]['enabled'] = false;
+        check($disabled->getEnabled(11) && $disabled->getEnabled(0), 'saved site disable does not change runtime enabled status');
         Plugin::$settings[11]['enabled'] = true;
         $disabled->register('generic', 'plugins/generic/coverImageValidation', 11);
-        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'site disable overrides enabled journal setting');
+        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 'saved site disable cannot bypass validation');
         Hook::clear('Publication::validate');
         unset(Plugin::$settings[0]);
         $notInstalled = new CoverImageValidationPlugin();
         $notInstalled->register('generic', 'plugins/generic/coverImageValidation', 11);
-        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'old journal enable alone does not substitute for site installation');
+        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 'missing site setting cannot bypass validation');
+        $descriptor = file_get_contents(__DIR__ . '/../version.xml');
+        check(str_contains($descriptor, '<lazy-load>0</lazy-load>') && str_contains($descriptor, '<sitewide>1</sitewide>'), 'descriptor loads site-wide regardless of saved enabled settings');
     } finally {
         foreach (glob($tmp . '/*') as $file) { unlink($file); }
         rmdir($tmp);

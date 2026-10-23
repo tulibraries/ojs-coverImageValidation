@@ -1,6 +1,6 @@
 # Cover Image Validation for OJS 3.4.0-9
 
-Custom **site-wide** generic plugin, version 1.1.0.0. No OJS core changes.
+Custom **site-wide** generic plugin, version 1.2.0.0. No OJS core changes.
 Uses `Publication::validate` to check new publication cover images, including
 unfinished submissions and direct API updates, before public storage.
 
@@ -18,10 +18,12 @@ unfinished submissions and direct API updates, before public storage.
 - Missing PHP GD/Fileinfo rejects new covers instead of accepting unchecked files.
 
 Limits are constants in `CoverImageValidator.php`. There is no settings form.
-The site-level enabled setting (context 0) applies to **every existing and future
-journal**. Old per-journal enabled settings are ignored by the plugin's runtime
-check. Site administrators control the global switch; this is not an always-on
-plugin that bypasses OJS's enable/disable mechanism.
+Protection is mandatory for **every existing and future journal**. OJS enable/
+disable controls are unavailable, and direct disable calls cannot turn it off.
+Saved site/journal enabled settings do not govern validation. Non-lazy loading
+in version.xml ensures OJS loads the plugin even when a saved setting is false.
+A server administrator can still remove/replace the code or uninstall it; this
+is not protection against administrators who control the deployment.
 
 This does not scan or clean existing files, validate manuscripts/galleys or
 profile images, or prevent uploads into temporary storage. It is not a malware
@@ -37,7 +39,7 @@ erase its validation errors.
 2. Extract the archive from the OJS root:
 
    ```bash
-   tar -xzf /path/to/coverImageValidation-1.1.0.tar.gz -C plugins/generic
+   tar -xzf /path/to/coverImageValidation-1.2.0.tar.gz -C plugins/generic
    ```
 
    The folder must remain `plugins/generic/coverImageValidation`, even if your
@@ -60,27 +62,19 @@ erase its validation errors.
 
    Use your deployment's PHP executable and application user if different.
    Run once for this new version; if it reports an error, stop and investigate.
-   No custom database migration is required. OJS records version 1.1.0.0 and
-   installs the default site-level `enabled=1` when no site setting exists.
-   A previously explicit site-level disable is preserved.
+   No custom database migration is required. OJS records version 1.2.0.0,
+   with site-wide, non-lazy loading. Existing enabled settings are harmless.
 5. In the QA database, verify:
 
    ```sql
-   SELECT product, major, minor, revision, build, `current`, sitewide
+   SELECT product, major, minor, revision, build, `current`, sitewide, lazy_load
    FROM versions
    WHERE product = 'coverImageValidation' AND `current` = 1;
-
-   SELECT plugin_name, context_id, setting_value AS enabled
-   FROM plugin_settings
-   WHERE plugin_name = 'coverimagevalidationplugin'
-     AND setting_name = 'enabled' AND context_id = 0;
    ```
 
-   Expect current version **1.1.0.0**, `sitewide=1`, and a context-0 enabled value
-   of `1`. A setting for journal 11 alone is no longer enough. If context 0 is
-   explicitly disabled, log in as a site administrator and enable the site-wide
-   plugin from Installed Plugins. Do not assume installation succeeded based
-   only on the presence of its files.
+   Expect current version **1.2.0.0**, `sitewide=1`, and `lazy_load=0`.
+   Registration is essential: replacing PHP files alone leaves the old loading
+   metadata in the database. There is no enable checkbox to select.
 6. Verify GD and Fileinfo are enabled in PHP-FPM, not only the CLI. If you
    previously applied a core validation patch, restore the verified original
    core file on QA before testing, preserving unrelated customizations. The
@@ -113,21 +107,18 @@ manually granting extra permissions. The previous reproduction used QA journal
    galley workflow in use. Test a second supported locale and image size limits.
 6. **Repeat the HTML rejection and valid-image acceptance in a second QA journal
    that has never enabled the plugin individually.** This verifies global coverage.
-7. In restricted QA only, disable the global plugin to confirm the harmless
-   draft reproduction succeeds, then re-enable and confirm rejection. Clean up
-   the harmless public file produced by that comparison. Leave global protection
-   enabled before returning to normal operations.
+7. Verify that Installed Plugins offers no disable control, including for a
+   site administrator. Confirm HTML remains rejected in a second journal.
 
 After QA passes, repeat the install/upgrade and database verification on
 production. This change does not establish that the incident is fully resolved.
 
 ## Rollback
 
-A site administrator can disable the site-wide plugin. That removes validation
-for **all journals**, so keep containment restrictions in place. To revert to
-1.0's journal-level behavior, restore the old code and use OJS's version update
-process under a reviewed rollback plan; restoring PHP files alone does not
-revert the database's site-wide metadata or site settings.
+Rollback requires server/deployment access: keep traffic restrictions in place,
+restore a reviewed previous plugin release, and register that release through
+OJS's version process. Restoring PHP files alone does not revert the database
+loading metadata. Removing/uninstalling this plugin removes cover validation.
 
 ## Development validation
 
