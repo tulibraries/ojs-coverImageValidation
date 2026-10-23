@@ -17,3 +17,28 @@ TEST_MISSING_EXTENSIONS=1 OJS_SOURCE=/path/to/ojs-3.4.0-9 php -n tests/run.php
 The second command verifies refusal of new covers without decoder extensions.
 The harness does not modify OJS source or connect to a database. Fixtures are
 created in a private temporary directory and removed afterward.
+
+## Automated checks on GitHub
+
+`.github/workflows/tests.yml` runs syntax checks and the test harness on every
+push and pull request, and supports manual runs from the Actions tab. The matrix
+uses PHP 8.1 and 8.3 with GD and Fileinfo, then repeats the missing-extension
+check with `php -n`. Each run checks out only the pkp-lib source pinned by OJS
+3.4.0-9, so the Hook dispatcher cannot silently change with an upstream branch.
+
+The regression suite includes rejected HTML replacements, mixed-language covers
+(including reversed locale order), and requests without an authenticated file
+owner. The valid-image tests ensure image uploads remain supported. The site-wide tests use the real OJS LazyLoadPlugin and GenericPlugin classes
+to verify context-0 settings across current and future journals. Base plugin
+settings, account, storage, and publication objects are stand-ins; this is not a complete OJS API
+or draft-permission integration test. Keep the browser-based QA draft test in
+README.md as the deployment acceptance check.
+
+To obtain just the dependency used in CI, from the plugin checkout:
+
+```bash
+git clone --no-checkout https://github.com/pkp/pkp-lib.git .test-deps/ojs/lib/pkp
+git -C .test-deps/ojs/lib/pkp checkout f968cdafe19b256df0d649ebcc43399bfb695fee
+OJS_SOURCE="$PWD/.test-deps/ojs" php tests/run.php
+TEST_MISSING_EXTENSIONS=1 OJS_SOURCE="$PWD/.test-deps/ojs" php -n tests/run.php
+```

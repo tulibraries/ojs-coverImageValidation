@@ -3,6 +3,7 @@ namespace {
     if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
     define('PKP_STRICT_MODE', true);
     function __($key) { return $key; }
+    function strtolower_codesafe($value) { return strtolower($value); }
 }
 namespace PKP\core {
     class Registry {
@@ -14,18 +15,25 @@ namespace PKP\core {
     }
 }
 namespace PKP\plugins {
-    class GenericPlugin {
-        public bool $enabled = true;
-        public function register($category, $path, $context = null) { return true; }
-        public function getEnabled($context = null) { return $this->enabled; }
+    class Plugin {
+        public static array $settings = [];
+        private string $path = '';
+        public function register($category, $path, $context = null) { $this->path = $path; return true; }
+        public function getPluginPath() { return $this->path; }
+        public function addLocaleData() {}
+        public function isSitePlugin() { return false; }
+        public function getSetting($context, $name) { return self::$settings[$context][$name] ?? null; }
+        public function updateSetting($context, $pluginName, $value, $type) { self::$settings[$context][$pluginName] = $value; }
     }
 }
 namespace APP\core {
     class Application {
         public static $user;
+        public static int $contextId = 11;
         public static function get() { return new self(); }
         public function getRequest() { return $this; }
         public function getUser() { return self::$user; }
+        public function getContext() { return new class { public function getId() { return Application::$contextId; } }; }
     }
 }
 namespace PKP\file {
@@ -41,12 +49,15 @@ namespace {
     $source = getenv('OJS_SOURCE');
     if (!$source) { throw new \RuntimeException('Set OJS_SOURCE to the OJS 3.4.0-9 source directory.'); }
     require $source . '/lib/pkp/classes/plugins/Hook.php';
+    require $source . '/lib/pkp/classes/plugins/LazyLoadPlugin.php';
+    require $source . '/lib/pkp/classes/plugins/GenericPlugin.php';
     require __DIR__ . '/../CoverImageValidationPlugin.php';
 
     use APP\core\Application;
     use APP\plugins\generic\coverImageValidation\CoverImageValidator;
     use APP\plugins\generic\coverImageValidation\CoverImageValidationPlugin;
     use PKP\plugins\Hook;
+    use PKP\plugins\Plugin;
     use PKP\file\TemporaryFileManager;
 
     class TestFile {
@@ -108,7 +119,11 @@ namespace {
             3 => new TestFile($tmp . '/png', 'image/png', 99),
         ];
         $plugin = new CoverImageValidationPlugin();
+        Plugin::$settings = [0 => ['enabled' => true], 11 => ['enabled' => false]];
         $plugin->register('generic', 'plugins/generic/coverImageValidation', 11);
+        check($plugin->isSitePlugin(), 'plugin is site-wide');
+        check($plugin->getEnabled(), 'site enable overrides disabled journal setting using real OJS LazyLoadPlugin');
+        check($plugin->getInstallSitePluginSettingsFile() === 'plugins/generic/coverImageValidation/settings.xml', 'installer receives site defaults file');
         function validateProps($props, $publication = null, $existingErrors = []) {
             $errors = $existingErrors;
             Hook::call('Publication::validate', [&$errors, $publication, $props, ['en', 'fr_CA'], 'en']);
@@ -125,15 +140,52 @@ namespace {
         check(isset(validateProps(['coverImage' => ['fr_CA' => ['temporaryFileId' => 1]]])['coverImage']['fr_CA']), 'validate every submitted locale');
         check(isset(validateProps(['coverImage' => ['en' => ['uploadName' => 'evil.html']]])['coverImage']['en']), 'reject direct filename on new publication');
         $saved = new TestPublication(['en' => ['uploadName' => 'original.png', 'altText' => 'Old']]);
+        $originalCover = $saved->covers;
+        $rejectedReplacement = validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]], $saved);
+        check(isset($rejectedReplacement['coverImage']['en']) && $saved->covers === $originalCover, 'reject HTML replacement without changing the existing cover');
+        $mixedLocales = validateProps(['coverImage' => [
+            'en' => ['temporaryFileId' => 2],
+            'fr_CA' => ['temporaryFileId' => 1],
+        ]]);
+        check(!isset($mixedLocales['coverImage']['en']) && isset($mixedLocales['coverImage']['fr_CA']), 'valid first locale does not bypass HTML validation in another locale');
+        $mixedLocalesReversed = validateProps(['coverImage' => [
+            'fr_CA' => ['temporaryFileId' => 1],
+            'en' => ['temporaryFileId' => 2],
+        ]]);
+        check($mixedLocalesReversed === $mixedLocales, 'locale order does not change the rejection');
+        $author = Application::$user;
+        Application::$user = null;
+        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 2]]])['coverImage']['en']), 'reject new upload without an authenticated owner');
+        Application::$user = $author;
         check(validateProps(['coverImage' => ['en' => ['uploadName' => 'original.png', 'altText' => 'New']]], $saved) === [], 'permit existing cover alt-text edit');
         check(isset(validateProps(['coverImage' => ['en' => ['uploadName' => 'other.png']]], $saved)['coverImage']['en']), 'reject replacement filename without upload');
         $existing = ['title' => ['en' => ['Required']], 'coverImage' => ['en' => ['Earlier error']]];
         $result = validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]], null, $existing);
         check($result['title'] === $existing['title'] && count($result['coverImage']['en']) === 2, 'preserve prior validation errors');
         Hook::clear('Publication::validate');
-        $disabled = new CoverImageValidationPlugin(); $disabled->enabled = false;
+        Application::$contextId = 16;
+        Hook::clear('Publication::validate');
+        $otherJournal = new CoverImageValidationPlugin();
+        $otherJournal->register('generic', 'plugins/generic/coverImageValidation', 16);
+        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 'site-enabled validation protects another journal without a journal setting');
+        Application::$contextId = 999;
+        Hook::clear('Publication::validate');
+        $newJournal = new CoverImageValidationPlugin();
+        $newJournal->register('generic', 'plugins/generic/coverImageValidation', 999);
+        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 'site-enabled validation protects a newly created journal');
+        Application::$contextId = 11;
+        Hook::clear('Publication::validate');
+        $disabled = new CoverImageValidationPlugin();
+        $disabled->setEnabled(false);
+        check(Plugin::$settings[0]['enabled'] === false && Plugin::$settings[11]['enabled'] === false, 'disabling uses site context through real OJS LazyLoadPlugin');
+        Plugin::$settings[11]['enabled'] = true;
         $disabled->register('generic', 'plugins/generic/coverImageValidation', 11);
-        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'disabled plugin does not register validation');
+        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'site disable overrides enabled journal setting');
+        Hook::clear('Publication::validate');
+        unset(Plugin::$settings[0]);
+        $notInstalled = new CoverImageValidationPlugin();
+        $notInstalled->register('generic', 'plugins/generic/coverImageValidation', 11);
+        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'old journal enable alone does not substitute for site installation');
     } finally {
         foreach (glob($tmp . '/*') as $file) { unlink($file); }
         rmdir($tmp);

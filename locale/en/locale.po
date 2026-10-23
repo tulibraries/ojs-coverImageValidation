@@ -8,7 +8,7 @@ msgid "plugins.generic.coverImageValidation.name"
 msgstr "Cover Image Validation"
 
 msgid "plugins.generic.coverImageValidation.description"
-msgstr "Checks new publication cover uploads for valid JPEG, PNG, or GIF contents, a 5 MiB size limit, and a four-million-pixel limit. Applies to drafts too."
+msgstr "Site-wide validation of new publication cover uploads in every journal, including drafts. Requires valid JPEG, PNG, or GIF contents, a 5 MiB size limit, and a four-million-pixel limit."
 
 msgid "plugins.generic.coverImageValidation.invalid"
 msgstr "Upload a valid JPEG, PNG, or GIF image as the cover. HTML, PDF, SVG, and other formats are not accepted as cover images."
