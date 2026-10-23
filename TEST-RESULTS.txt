@@ -1,0 +1,33 @@
+Isolated PHP 8.3 CLI tests with GD/Fileinfo and the real OJS 3.4.0-9 Hook dispatcher. Account/storage objects are stand-ins; this is not a live OJS integration test.
+
+PASS: accept valid png
+PASS: accept valid jpeg
+PASS: accept valid gif
+PASS: reject HTML
+PASS: reject HTML claiming image MIME
+PASS: reject HTML renamed .png
+PASS: reject PDF
+PASS: reject SVG
+PASS: reject valid PNG with stored HTML MIME
+PASS: reject empty file
+PASS: reject missing file
+PASS: enforce byte limit
+PASS: enforce pixel limit
+PASS: reject undecodable PNG
+PASS: real OJS hook propagates HTML rejection
+PASS: hook accepts valid owned image
+PASS: ordinary metadata unaffected
+PASS: localized cover removal permitted
+PASS: cover removal permitted
+PASS: reject another users file
+PASS: reject unknown temporary ID
+PASS: reject malformed temporary ID
+PASS: validate every submitted locale
+PASS: reject direct filename on new publication
+PASS: permit existing cover alt-text edit
+PASS: reject replacement filename without upload
+PASS: preserve prior validation errors
+PASS: disabled plugin does not register validation
+
+PHP -n without GD/Fileinfo:
+PASS: missing GD/Fileinfo fails closed

@@ -1,0 +1,23 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "plugins.generic.coverImageValidation.name"
+msgstr "Cover Image Validation"
+
+msgid "plugins.generic.coverImageValidation.description"
+msgstr "Checks new publication cover uploads for valid JPEG, PNG, or GIF contents, a 5 MiB size limit, and a four-million-pixel limit. Applies to drafts too."
+
+msgid "plugins.generic.coverImageValidation.invalid"
+msgstr "Upload a valid JPEG, PNG, or GIF image as the cover. HTML, PDF, SVG, and other formats are not accepted as cover images."
+
+msgid "plugins.generic.coverImageValidation.limits"
+msgstr "Cover images must be no larger than 5 MiB and four million pixels."
+
+msgid "plugins.generic.coverImageValidation.unavailable"
+msgstr "Cover-image validation is unavailable. Ask the administrator to enable PHP GD and Fileinfo for the web application."
+
+msgid "plugins.generic.coverImageValidation.newUploadRequired"
+msgstr "Upload a new image to replace the cover; changing the stored filename is not allowed."
