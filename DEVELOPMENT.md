@@ -25,10 +25,11 @@ push and pull request, and supports manual runs from the Actions tab. The matrix
 uses PHP 8.1 and 8.3 with GD and Fileinfo, then repeats the missing-extension
 check with `php -n`.
 
-The regression suite includes editorial-role enforcement, rejected HTML/PDF
-replacements, mixed-language covers (including reversed locale order), and
-requests without an authenticated file owner. The valid-image tests ensure
-editorial image uploads remain supported. Local Hook, plugin, account, storage,
-and publication doubles cover the interfaces used by this plugin. This is not
-a complete OJS API or draft-permission integration test. Keep the browser-based
-QA draft test in README.md as the deployment acceptance check.
+The regression suite includes direct-cover editorial-role enforcement, rejected
+HTML/PDF replacements, mixed-language covers (including reversed locale order),
+and requests without an authenticated file owner. The valid-image tests ensure
+normal submission artwork can still be validated. The approval page uses OJS's
+database, private file service, and publication repository, so its final
+approve/reject behavior requires the browser-based QA test in `README.md` (or
+an OJS integration-test environment); the repository harness does not connect
+to an OJS database.
