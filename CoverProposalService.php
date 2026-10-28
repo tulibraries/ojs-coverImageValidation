@@ -113,7 +113,10 @@ class CoverProposalService
 
     public function reject(SubmissionFile $file): void
     {
-        $this->setStatus($file, self::STATUS_REJECTED);
+        // Delete through OJS so the submission-file record and its private
+        // stored file are cleaned up together. OJS preserves the physical
+        // file when it is still shared by another submission-file revision.
+        Repo::submissionFile()->delete($file);
     }
 
     /**

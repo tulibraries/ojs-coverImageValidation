@@ -30,6 +30,7 @@ HTML/PDF replacements, mixed-language covers (including reversed locale order),
 and requests without an authenticated file owner. The valid-image tests ensure
 normal submission artwork can still be validated. The approval page uses OJS's
 database, private file service, and publication repository, so its final
-approve/reject behavior requires the browser-based QA test in `README.md` (or
-an OJS integration-test environment); the repository harness does not connect
-to an OJS database.
+approve/reject behavior—including deletion of a rejected private submission
+file—requires the browser-based QA test in `README.md` (or an OJS
+integration-test environment); the repository harness does not connect to an
+OJS database.

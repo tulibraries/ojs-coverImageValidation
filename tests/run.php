@@ -77,6 +77,17 @@ namespace PKP\file {
         }
     }
 }
+namespace PKP\submissionFile {
+    class SubmissionFile {}
+}
+namespace APP\facades {
+    class Repo {
+        public static $submissionFileRepository;
+        public static function submissionFile() {
+            return self::$submissionFileRepository;
+        }
+    }
+}
 namespace {
     require __DIR__ . '/../CoverImageValidationPlugin.php';
 
@@ -87,6 +98,7 @@ namespace {
     use PKP\plugins\Hook;
     use PKP\plugins\Plugin;
     use PKP\file\TemporaryFileManager;
+    use APP\facades\Repo;
 
     class TestFile {
         public function __construct(public string $path, public string $mime, public int $owner = 7) {}
@@ -106,6 +118,11 @@ namespace {
     class TestPublication {
         public function __construct(public array $covers = []) {}
         public function getData($key, $locale) { return $this->covers[$locale] ?? null; }
+    }
+    class TestSubmissionFile extends \PKP\submissionFile\SubmissionFile {}
+    class TestSubmissionFileRepository {
+        public ?object $deleted = null;
+        public function delete($file): void { $this->deleted = $file; }
     }
     function check($condition, $name) {
         if (!$condition) { throw new \RuntimeException('FAIL: ' . $name); }
@@ -168,6 +185,11 @@ namespace {
         check($plugin->isSitePlugin(), 'plugin is site-wide');
         check($plugin->getEnabled(), 'mandatory validation reports enabled despite disabled journal setting');
         check($plugin->getInstallSitePluginSettingsFile() === 'plugins/generic/coverImageValidation/settings.xml', 'installer receives site defaults file');
+        $submissionFileRepository = new TestSubmissionFileRepository();
+        Repo::$submissionFileRepository = $submissionFileRepository;
+        $rejectedFile = new TestSubmissionFile();
+        (new CoverProposalService())->reject($rejectedFile);
+        check($submissionFileRepository->deleted === $rejectedFile, 'reject deletes through the OJS submission-file repository');
         $reviewContext = new class { public function getId() { return 11; } };
         check(CoverProposalService::canReview(new TestUser(7, [11 => [\PKP\security\Role::ROLE_ID_SUB_EDITOR]]), $reviewContext), 'current-journal editor can review proposals');
         check(!CoverProposalService::canReview(new TestUser(7, [12 => [\PKP\security\Role::ROLE_ID_SUB_EDITOR]]), $reviewContext), 'editor from another journal cannot review proposals');

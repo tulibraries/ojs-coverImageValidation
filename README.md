@@ -1,6 +1,6 @@
 # Cover Image Validation for OJS 3.4.0-9
 
-Custom **site-wide** generic plugin, version 1.4.0.7. No OJS core changes.
+Custom **site-wide** generic plugin, version 1.4.0.8. No OJS core changes.
 Authors upload proposed artwork as an ordinary private submission file. An
 editor opens the submission workflow's **Review cover artwork** action, previews
 the file, and clicks **Approve as cover**. Only then does OJS move a revalidated
@@ -31,10 +31,11 @@ in version.xml ensures OJS loads the plugin even when a saved setting is false.
 A server administrator can still remove/replace the code or uninstall it; this
 is not protection against administrators who control the deployment.
 
-Rejected proposals remain in the submission's private file history but are
-removed from this plugin's review queue. Authors can upload a new revision or a
-new submission file. Replacing an already approved cover requires a fresh
-approval; the existing public cover is not changed while a proposal is pending.
+Rejected proposals are removed from the submission's private file history and
+their stored files are deleted through OJS's submission-file repository. Authors
+can upload a new revision or a new submission file. Replacing an already
+approved cover requires a fresh approval; the existing public cover is not
+changed while a replacement is pending.
 
 This does not scan or clean existing files, validate manuscripts/galleys or
 profile images, or prevent uploads into temporary storage. It is not a malware
@@ -50,7 +51,7 @@ review. Other plugins must not erase its validation errors.
 2. Extract the archive from the OJS root:
 
    ```bash
-   tar -xzf /path/to/coverImageValidation-1.4.0.7.tar.gz -C plugins/generic
+   tar -xzf /path/to/coverImageValidation-1.4.0.8.tar.gz -C plugins/generic
    ```
 
    The folder must remain `plugins/generic/coverImageValidation`, even if your
@@ -84,7 +85,7 @@ review. Other plugins must not erase its validation errors.
    WHERE product = 'coverImageValidation' AND `current` = 1;
    ```
 
-   Expect current version **1.4.0.7**, `sitewide=1`, and `lazy_load=0`.
+   Expect current version **1.4.0.8**, `sitewide=1`, and `lazy_load=0`.
    Registration is essential: replacing PHP files alone leaves the old loading
    metadata in the database. There is no enable checkbox to select.
 6. Verify GD and Fileinfo are enabled in PHP-FPM, not only the CLI. If you
@@ -105,9 +106,10 @@ manually granting extra permissions. The previous reproduction used QA journal
    workflow page and click **Review cover artwork**. Preview the private image,
    then click **Approve as cover** and verify that it becomes the publication
    cover.
-3. Reject another image and verify it disappears from the review queue without
-   creating a public file. Verify the previous approved cover remains unchanged
-   while a replacement is pending or rejected.
+3. Reject another image and verify it disappears from the review queue, its
+   private submission file is deleted, and no public file is created. Verify the
+   previous approved cover remains unchanged while a replacement is pending or
+   rejected.
 4. Verify an editor whose role exists only in another journal cannot open,
    preview, approve, or reject this journal's proposals.
 5. Test genuine PNG, JPEG, and GIF files within limits. HTML, PDF, SVG, and
