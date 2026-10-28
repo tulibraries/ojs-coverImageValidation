@@ -1,8 +1,10 @@
 # Cover Image Validation for OJS 3.4.0-9
 
-Custom **site-wide** generic plugin, version 1.3.0.0. No OJS core changes.
-Uses `Publication::validate` to check new publication cover images, including
-unfinished submissions and direct API updates, before public storage.
+Custom **site-wide** generic plugin, version 1.4.0.0. No OJS core changes.
+Authors upload proposed artwork as an ordinary private submission file. An
+editor opens the submission workflow's **Review cover artwork** action, previews
+the file, and clicks **Approve as cover**. Only then does OJS move a revalidated
+copy into public cover storage and update the publication metadata.
 
 ## Coverage and limits
 
@@ -13,8 +15,10 @@ unfinished submissions and direct API updates, before public storage.
 - Maximum pixel count: 4,000,000 (for example, 2000 x 2000).
 - Respect temporary-file ownership and reject replacement filenames submitted
   without an owned, validated temporary upload.
+- Reject direct author/API cover attachments; the normal submission-file path
+  remains private until an editor approves it.
 - Require a journal manager or editor/section-editor role in the current
-  journal before accepting a new or replacement cover upload.
+  journal for the review page, preview, approval, and rejection actions.
 - Permit unchanged existing covers, alt-text edits, cover removal, and metadata
   updates without a cover upload.
 - Missing PHP GD/Fileinfo rejects new covers instead of accepting unchecked files.
@@ -27,12 +31,17 @@ in version.xml ensures OJS loads the plugin even when a saved setting is false.
 A server administrator can still remove/replace the code or uninstall it; this
 is not protection against administrators who control the deployment.
 
+Rejected proposals remain in the submission's private file history but are
+removed from this plugin's review queue. Authors can upload a new revision or a
+new submission file. Replacing an already approved cover requires a fresh
+approval; the existing public cover is not changed while a proposal is pending.
+
 This does not scan or clean existing files, validate manuscripts/galleys or
 profile images, or prevent uploads into temporary storage. It is not a malware
 scanner or image sanitizer; accepted images are not re-encoded. It targets the
-reproduced publication validation path. Imports or repository calls that bypass
-validation and other upload paths need separate review. Other plugins must not
-erase its validation errors.
+publication validation path and this plugin's review path. Imports or
+repository calls that bypass validation and other upload paths need separate
+review. Other plugins must not erase its validation errors.
 
 ## Install or upgrade on restricted QA
 
@@ -41,7 +50,7 @@ erase its validation errors.
 2. Extract the archive from the OJS root:
 
    ```bash
-   tar -xzf /path/to/coverImageValidation-1.3.0.tar.gz -C plugins/generic
+   tar -xzf /path/to/coverImageValidation-1.4.0.tar.gz -C plugins/generic
    ```
 
    The folder must remain `plugins/generic/coverImageValidation`, even if your
@@ -64,8 +73,9 @@ erase its validation errors.
 
    Use your deployment's PHP executable and application user if different.
    Run once for this new version; if it reports an error, stop and investigate.
-   No custom database migration is required. OJS records version 1.3.0.0,
-   with site-wide, non-lazy loading. Existing enabled settings are harmless.
+   No custom database migration is required; review status uses OJS's existing
+   submission-file settings table. OJS records version 1.4.0.0, with site-wide,
+   non-lazy loading. Existing enabled settings are harmless.
 5. In the QA database, verify:
 
    ```sql
@@ -74,7 +84,7 @@ erase its validation errors.
    WHERE product = 'coverImageValidation' AND `current` = 1;
    ```
 
-   Expect current version **1.3.0.0**, `sitewide=1`, and `lazy_load=0`.
+   Expect current version **1.4.0.0**, `sitewide=1`, and `lazy_load=0`.
    Registration is essential: replacing PHP files alone leaves the old loading
    metadata in the database. There is no enable checkbox to select.
 6. Verify GD and Fileinfo are enabled in PHP-FPM, not only the CLI. If you
@@ -88,19 +98,21 @@ Use an ordinary Author account and a disposable unfinished submission without
 manually granting extra permissions. The previous reproduction used QA journal
 `tj` (ID 11), draft 836 / publication 1255; use a fresh draft if those were deleted.
 
-1. As an Author, verify a genuine temporary image cannot be attached as a
-   cover; the publication request must return **400 with the editorial-role
-   error**. Uploading proposed artwork as a manuscript/submission file remains
-   available for editorial review.
-2. As a journal Manager or Editor/Section Editor, verify genuine PNG, JPEG, and
-   GIF covers can be attached, while HTML, PDF, and HTML renamed `.png` with
-   `image/png` are rejected.
-3. Verify an editor whose role exists only in another journal cannot attach a
-   cover in this journal.
-4. Verify no new public HTML is created and that rejection preserves the current
-   cover metadata. Remove/quarantine old reproduction fixtures first so an old
-   file is not mistaken for a new successful upload.
-5. Test genuine PNG, JPEG, and GIF covers within limits: accept. Example PNG
+1. As an Author, upload a genuine PNG as a normal submission file. Verify it
+   remains private and cannot be attached directly as a cover; the publication
+   request must return **400 with the editorial-review error**.
+2. As a journal Manager or Editor/Section Editor, open that submission's
+   workflow page and click **Review cover artwork**. Preview the private image,
+   then click **Approve as cover** and verify that it becomes the publication
+   cover.
+3. Reject another image and verify it disappears from the review queue without
+   creating a public file. Verify the previous approved cover remains unchanged
+   while a replacement is pending or rejected.
+4. Verify an editor whose role exists only in another journal cannot open,
+   preview, approve, or reject this journal's proposals.
+5. Test genuine PNG, JPEG, and GIF files within limits. HTML, PDF, SVG, and
+   HTML renamed `.png` with `image/png` must never appear as proposals or become
+   covers. Example PNG
    construction for the browser-console test:
 
    ```javascript
@@ -113,7 +125,7 @@ manually granting extra permissions. The previous reproduction used QA journal
 
 6. Test cover removal, alt text, ordinary metadata, manuscript PDFs, and any HTML
    galley workflow in use. Test a second supported locale and image size limits.
-7. **Repeat the HTML rejection and valid-image acceptance in a second QA journal
+7. **Repeat the direct-API rejection and review approval in a second QA journal
    that has never enabled the plugin individually.** This verifies global coverage.
 8. Verify that Installed Plugins offers no disable control, including for a
    site administrator. Confirm HTML remains rejected in a second journal.

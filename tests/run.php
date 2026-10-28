@@ -81,6 +81,7 @@ namespace {
     require __DIR__ . '/../CoverImageValidationPlugin.php';
 
     use APP\core\Application;
+    use APP\plugins\generic\coverImageValidation\CoverProposalService;
     use APP\plugins\generic\coverImageValidation\CoverImageValidator;
     use APP\plugins\generic\coverImageValidation\CoverImageValidationPlugin;
     use PKP\plugins\Hook;
@@ -167,6 +168,9 @@ namespace {
         check($plugin->isSitePlugin(), 'plugin is site-wide');
         check($plugin->getEnabled(), 'mandatory validation reports enabled despite disabled journal setting');
         check($plugin->getInstallSitePluginSettingsFile() === 'plugins/generic/coverImageValidation/settings.xml', 'installer receives site defaults file');
+        $reviewContext = new class { public function getId() { return 11; } };
+        check(CoverProposalService::canReview(new TestUser(7, [11 => [\PKP\security\Role::ROLE_ID_SUB_EDITOR]]), $reviewContext), 'current-journal editor can review proposals');
+        check(!CoverProposalService::canReview(new TestUser(7, [12 => [\PKP\security\Role::ROLE_ID_SUB_EDITOR]]), $reviewContext), 'editor from another journal cannot review proposals');
         function validateProps($props, $publication = null, $existingErrors = []) {
             $errors = $existingErrors;
             Hook::call('Publication::validate', [&$errors, $publication, $props, ['en', 'fr_CA'], 'en']);
