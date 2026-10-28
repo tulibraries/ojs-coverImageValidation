@@ -6,6 +6,7 @@ use APP\core\Application;
 use PKP\file\TemporaryFileManager;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
+use PKP\security\Role;
 
 require_once __DIR__ . '/CoverImageValidator.php';
 
@@ -78,7 +79,16 @@ class CoverImageValidationPlugin extends GenericPlugin
             return false;
         }
 
-        $user = Application::get()->getRequest()->getUser();
+        $request = Application::get()->getRequest();
+        $user = $request->getUser();
+        $context = $request->getContext();
+        $canUploadCover = $user && $context && $user->hasRole(
+            [
+                Role::ROLE_ID_MANAGER,
+                Role::ROLE_ID_SUB_EDITOR,
+            ],
+            $context->getId()
+        );
         $manager = new TemporaryFileManager();
         $validator = new CoverImageValidator();
 
@@ -90,12 +100,24 @@ class CoverImageValidationPlugin extends GenericPlugin
             if (!is_array($cover)) {
                 $failure = 'plugins.generic.coverImageValidation.invalid';
             } elseif (array_key_exists('temporaryFileId', $cover)) {
-                $id = filter_var($cover['temporaryFileId'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-                // Never retrieve another user's temporary file.
-                $file = $id && $user ? $manager->getFile($id, $user->getId()) : null;
-                $failure = $file
-                    ? $validator->validate($file->getFilePath(), (string) $file->getFileType())
-                    : 'plugins.generic.coverImageValidation.invalid';
+                if (!$canUploadCover) {
+                    $failure = 'plugins.generic.coverImageValidation.editorRequired';
+                } else {
+                    $id = filter_var(
+                        $cover['temporaryFileId'],
+                        FILTER_VALIDATE_INT,
+                        ['options' => ['min_range' => 1]]
+                    );
+
+                    // Never retrieve another user's temporary file.
+                    $file = $id && $user
+                        ? $manager->getFile($id, $user->getId())
+                        : null;
+
+                    $failure = $file
+                        ? $validator->validate($file->getFilePath(), (string) $file->getFileType())
+                        : 'plugins.generic.coverImageValidation.invalid';
+                }
             } else {
                 // Permit an unchanged existing cover (including alt-text edits),
                 // but never let a client choose a different server-side filename.

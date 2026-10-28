@@ -21,3 +21,6 @@ msgstr "Cover-image validation is unavailable. Ask the administrator to enable P
 
 msgid "plugins.generic.coverImageValidation.newUploadRequired"
 msgstr "Upload a new image to replace the cover; changing the stored filename is not allowed."
+
+msgid "plugins.generic.coverImageValidation.editorRequired"
+msgstr "Only editorial staff may upload or replace cover images. Please upload proposed cover artwork as a submission file for editorial review."

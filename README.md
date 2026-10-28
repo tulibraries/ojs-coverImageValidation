@@ -1,6 +1,6 @@
 # Cover Image Validation for OJS 3.4.0-9
 
-Custom **site-wide** generic plugin, version 1.2.0.0. No OJS core changes.
+Custom **site-wide** generic plugin, version 1.3.0.0. No OJS core changes.
 Uses `Publication::validate` to check new publication cover images, including
 unfinished submissions and direct API updates, before public storage.
 
@@ -13,6 +13,8 @@ unfinished submissions and direct API updates, before public storage.
 - Maximum pixel count: 4,000,000 (for example, 2000 x 2000).
 - Respect temporary-file ownership and reject replacement filenames submitted
   without an owned, validated temporary upload.
+- Require a journal manager or editor/section-editor role in the current
+  journal before accepting a new or replacement cover upload.
 - Permit unchanged existing covers, alt-text edits, cover removal, and metadata
   updates without a cover upload.
 - Missing PHP GD/Fileinfo rejects new covers instead of accepting unchecked files.
@@ -39,7 +41,7 @@ erase its validation errors.
 2. Extract the archive from the OJS root:
 
    ```bash
-   tar -xzf /path/to/coverImageValidation-1.2.0.tar.gz -C plugins/generic
+   tar -xzf /path/to/coverImageValidation-1.3.0.tar.gz -C plugins/generic
    ```
 
    The folder must remain `plugins/generic/coverImageValidation`, even if your
@@ -62,7 +64,7 @@ erase its validation errors.
 
    Use your deployment's PHP executable and application user if different.
    Run once for this new version; if it reports an error, stop and investigate.
-   No custom database migration is required. OJS records version 1.2.0.0,
+   No custom database migration is required. OJS records version 1.3.0.0,
    with site-wide, non-lazy loading. Existing enabled settings are harmless.
 5. In the QA database, verify:
 
@@ -72,7 +74,7 @@ erase its validation errors.
    WHERE product = 'coverImageValidation' AND `current` = 1;
    ```
 
-   Expect current version **1.2.0.0**, `sitewide=1`, and `lazy_load=0`.
+   Expect current version **1.3.0.0**, `sitewide=1`, and `lazy_load=0`.
    Registration is essential: replacing PHP files alone leaves the old loading
    metadata in the database. There is no enable checkbox to select.
 6. Verify GD and Fileinfo are enabled in PHP-FPM, not only the CLI. If you
@@ -86,13 +88,19 @@ Use an ordinary Author account and a disposable unfinished submission without
 manually granting extra permissions. The previous reproduction used QA journal
 `tj` (ID 11), draft 836 / publication 1255; use a fresh draft if those were deleted.
 
-1. Repeat the harmless HTML upload-and-attach test: temporary POST may return
-   200, but publication PUT must return **400 with the cover-image error**.
-2. Repeat with HTML renamed `.png` and claiming `image/png`: reject the cover.
-3. Verify no new public HTML is created and that rejection preserves the current
+1. As an Author, verify a genuine temporary image cannot be attached as a
+   cover; the publication request must return **400 with the editorial-role
+   error**. Uploading proposed artwork as a manuscript/submission file remains
+   available for editorial review.
+2. As a journal Manager or Editor/Section Editor, verify genuine PNG, JPEG, and
+   GIF covers can be attached, while HTML, PDF, and HTML renamed `.png` with
+   `image/png` are rejected.
+3. Verify an editor whose role exists only in another journal cannot attach a
+   cover in this journal.
+4. Verify no new public HTML is created and that rejection preserves the current
    cover metadata. Remove/quarantine old reproduction fixtures first so an old
    file is not mistaken for a new successful upload.
-4. Test genuine PNG, JPEG, and GIF covers within limits: accept. Example PNG
+5. Test genuine PNG, JPEG, and GIF covers within limits: accept. Example PNG
    construction for the browser-console test:
 
    ```javascript
@@ -103,11 +111,11 @@ manually granting extra permissions. The previous reproduction used QA journal
    const file = new File([blob], 'qa-valid-cover.png', {type: 'image/png'});
    ```
 
-5. Test cover removal, alt text, ordinary metadata, manuscript PDFs, and any HTML
+6. Test cover removal, alt text, ordinary metadata, manuscript PDFs, and any HTML
    galley workflow in use. Test a second supported locale and image size limits.
-6. **Repeat the HTML rejection and valid-image acceptance in a second QA journal
+7. **Repeat the HTML rejection and valid-image acceptance in a second QA journal
    that has never enabled the plugin individually.** This verifies global coverage.
-7. Verify that Installed Plugins offers no disable control, including for a
+8. Verify that Installed Plugins offers no disable control, including for a
    site administrator. Confirm HTML remains rejected in a second journal.
 
 After QA passes, repeat the install/upgrade and database verification on
@@ -122,9 +130,7 @@ loading metadata. Removing/uninstalling this plugin removes cover validation.
 
 ## Development validation
 
-Written against OJS 3.4.0-9 and its pinned pkp-lib commit
-`f968cdafe19b256df0d649ebcc43399bfb695fee`. The isolated harness exercises the
-real Hook dispatcher, LazyLoadPlugin, and GenericPlugin classes, with stand-ins
-for base plugin settings, accounts, publications, and temporary files. These
-are not live OJS/database/browser integration tests. See `DEVELOPMENT.md` and
-`TEST-RESULTS.txt`; live QA acceptance remains required.
+Written for OJS 3.4.0-9. The repository-local harness exercises the plugin with
+small stand-ins for OJS's Hook, plugin, account, storage, and publication
+interfaces. These are not live OJS/database/browser integration tests. See
+`DEVELOPMENT.md` and `TEST-RESULTS.txt`; live QA acceptance remains required.
