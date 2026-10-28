@@ -74,7 +74,7 @@ review. Other plugins must not erase its validation errors.
    Use your deployment's PHP executable and application user if different.
    Run once for this new version; if it reports an error, stop and investigate.
    No custom database migration is required; review status uses OJS's existing
-   submission-file settings table. OJS records version 1.4.0.0, with site-wide,
+   submission-file settings table. OJS records version 1.4.0.5, with site-wide,
    non-lazy loading. Existing enabled settings are harmless.
 5. In the QA database, verify:
 
