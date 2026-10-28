@@ -61,7 +61,9 @@ class CoverImageReviewHandler extends Handler
 
         $service = new CoverProposalService();
         $context = $request->getContext();
-        $locales = $context ? $context->getSupportedSubmissionLocales() : [];
+        $locales = $context
+            ? $context->getSupportedSubmissionLocaleNames()
+            : [];
         $reviewUrl = $request->getDispatcher()->url(
             $request,
             Application::ROUTE_PAGE,
@@ -169,8 +171,11 @@ class CoverImageReviewHandler extends Handler
         $context = $request->getContext();
         $locale = (string) $request->getUserVar('locale');
         $locales = $context->getSupportedSubmissionLocales();
-        if (!array_key_exists($locale, $locales)) {
+        if (!in_array($locale, $locales, true)) {
             $locale = $context->getPrimaryLocale();
+        }
+        if (!in_array($locale, $locales, true)) {
+            throw new \RuntimeException('No valid submission locale is available.');
         }
         $altText = trim((string) $request->getUserVar('altText'));
 
