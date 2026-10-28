@@ -185,6 +185,11 @@ class CoverImageValidationPlugin extends GenericPlugin
             return false;
         }
 
+        $service = new CoverProposalService();
+        if (empty($service->getCandidates($submission))) {
+            return false;
+        }
+
         $url = $request->getDispatcher()->url(
             $request,
             Application::ROUTE_PAGE,
@@ -206,6 +211,7 @@ class CoverImageValidationPlugin extends GenericPlugin
             . "    if (!target || document.querySelector('.coverImageValidationReview')) return;\n"
             . "    var panel = document.createElement('div');\n"
             . "    panel.className = 'coverImageValidationReview pkp_notification';\n"
+            . "    panel.style.marginBottom = '2rem';\n"
             . "    var heading = document.createElement('strong'); heading.textContent = " . $label . ";\n"
             . "    var description = document.createElement('p'); description.textContent = " . $description . ";\n"
             . "    var link = document.createElement('a'); link.className = 'pkp_button'; link.href = " . $safeUrl . "; link.textContent = " . $label . ";\n"

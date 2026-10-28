@@ -1,6 +1,6 @@
 # Cover Image Validation for OJS 3.4.0-9
 
-Custom **site-wide** generic plugin, version 1.4.0.0. No OJS core changes.
+Custom **site-wide** generic plugin, version 1.4.0.5. No OJS core changes.
 Authors upload proposed artwork as an ordinary private submission file. An
 editor opens the submission workflow's **Review cover artwork** action, previews
 the file, and clicks **Approve as cover**. Only then does OJS move a revalidated
@@ -50,7 +50,7 @@ review. Other plugins must not erase its validation errors.
 2. Extract the archive from the OJS root:
 
    ```bash
-   tar -xzf /path/to/coverImageValidation-1.4.0.tar.gz -C plugins/generic
+   tar -xzf /path/to/coverImageValidation-1.4.0.5.tar.gz -C plugins/generic
    ```
 
    The folder must remain `plugins/generic/coverImageValidation`, even if your
@@ -84,7 +84,7 @@ review. Other plugins must not erase its validation errors.
    WHERE product = 'coverImageValidation' AND `current` = 1;
    ```
 
-   Expect current version **1.4.0.0**, `sitewide=1`, and `lazy_load=0`.
+   Expect current version **1.4.0.5**, `sitewide=1`, and `lazy_load=0`.
    Registration is essential: replacing PHP files alone leaves the old loading
    metadata in the database. There is no enable checkbox to select.
 6. Verify GD and Fileinfo are enabled in PHP-FPM, not only the CLI. If you

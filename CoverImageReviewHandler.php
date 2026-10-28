@@ -10,6 +10,7 @@ use APP\template\TemplateManager;
 use PKP\core\PKPApplication;
 use APP\handler\Handler;
 use PKP\plugins\PluginRegistry;
+use PKP\security\authorization\ContextAccessPolicy;
 use PKP\security\authorization\internal\SubmissionRequiredPolicy;
 use PKP\security\authorization\internal\UserAccessibleWorkflowStageRequiredPolicy;
 use PKP\security\Role;
@@ -29,19 +30,28 @@ class CoverImageReviewHandler extends Handler
 
     public function authorize($request, &$args, $roleAssignments)
     {
-        // Reuse OJS's submission and editorial-workflow authorization before
-        // the plugin exposes a private file or changes publication metadata.
-        $this->addPolicy(new SubmissionRequiredPolicy($request, $args, 'submissionId'));
-        $this->addPolicy(new UserAccessibleWorkflowStageRequiredPolicy(
+        $this->addPolicy(
+            new ContextAccessPolicy($request, $roleAssignments)
+        );
+
+        $this->addPolicy(
+            new SubmissionRequiredPolicy($request, $args, 'submissionId')
+        );
+
+        $this->addPolicy(
+            new UserAccessibleWorkflowStageRequiredPolicy(
             $request,
             PKPApplication::WORKFLOW_TYPE_EDITORIAL
-        ));
+            )
+        );
 
         return parent::authorize($request, $args, $roleAssignments);
     }
 
-    public function index($args, Request $request)
+    public function index($args, $request)
     {
+        $this->setupTemplate($request);
+
         $submission = $this->getSubmission($request);
         $publication = $this->getPublication($submission, $request);
         if (!$publication) {
@@ -103,7 +113,7 @@ class CoverImageReviewHandler extends Handler
             ];
         }
 
-        $plugin = PluginRegistry::getPlugin('generic', 'coverImageValidation');
+        $plugin = PluginRegistry::getPlugin('generic', 'coverimagevalidationplugin');
         $templateMgr = TemplateManager::getManager($request);
         $templateMgr->assign([
             'coverReviewCandidates' => $candidates,
