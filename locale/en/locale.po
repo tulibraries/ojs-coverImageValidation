@@ -8,7 +8,7 @@ msgid "plugins.generic.coverImageValidation.name"
 msgstr "Cover Image Validation"
 
 msgid "plugins.generic.coverImageValidation.description"
-msgstr "Site-wide validation of new publication cover uploads in every journal, including drafts. Requires valid JPEG, PNG, or GIF contents, a 5 MiB size limit, and a four-million-pixel limit."
+msgstr "Site-wide validation and editorial review of publication cover images in every journal, including drafts. Authors submit artwork as a normal submission file; editorial staff approve it before it becomes public."
 
 msgid "plugins.generic.coverImageValidation.invalid"
 msgstr "Upload a valid JPEG, PNG, or GIF image as the cover. HTML, PDF, SVG, and other formats are not accepted as cover images."
@@ -21,3 +21,30 @@ msgstr "Cover-image validation is unavailable. Ask the administrator to enable P
 
 msgid "plugins.generic.coverImageValidation.newUploadRequired"
 msgstr "Upload a new image to replace the cover; changing the stored filename is not allowed."
+
+msgid "plugins.generic.coverImageValidation.editorRequired"
+msgstr "Cover images must be approved by editorial staff. Please upload proposed cover artwork as a normal submission file for review."
+
+msgid "plugins.generic.coverImageValidation.reviewCoverImages"
+msgstr "Review cover artwork"
+
+msgid "plugins.generic.coverImageValidation.reviewCoverImagesDescription"
+msgstr "Review image files uploaded with this submission. Approve one to make it the publication cover, or reject it to remove it from this review queue."
+
+msgid "plugins.generic.coverImageValidation.noCoverProposals"
+msgstr "There are no valid image proposals awaiting review. Authors can upload proposed artwork as normal submission files."
+
+msgid "plugins.generic.coverImageValidation.coverLocale"
+msgstr "Cover locale"
+
+msgid "plugins.generic.coverImageValidation.coverAltText"
+msgstr "Alternative text"
+
+msgid "plugins.generic.coverImageValidation.approveCover"
+msgstr "Approve as cover"
+
+msgid "plugins.generic.coverImageValidation.rejectCover"
+msgstr "Reject"
+
+msgid "plugins.generic.coverImageValidation.approvalFailed"
+msgstr "The cover could not be approved. The existing public cover, if any, was left unchanged."

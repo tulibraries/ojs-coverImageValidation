@@ -8,10 +8,14 @@ class CoverImageValidator
     public const MAX_BYTES = 5242880;
     public const MAX_PIXELS = 4000000;
 
+    public function __construct(private ?bool $extensionsAvailable = null) {}
+
     /** Returns a translation key on rejection, null on success. */
     public function validate(string $path, string $storedMime): ?string
     {
-        if (!extension_loaded('gd') || !class_exists(\finfo::class)) {
+        $extensionsAvailable = $this->extensionsAvailable
+            ?? (extension_loaded('gd') && class_exists(\finfo::class));
+        if (!$extensionsAvailable) {
             return 'plugins.generic.coverImageValidation.unavailable';
         }
         if (!is_file($path) || !is_readable($path)) {
@@ -48,7 +52,6 @@ class CoverImageValidator
         if ($image === false) {
             return 'plugins.generic.coverImageValidation.invalid';
         }
-        imagedestroy($image);
         return null;
     }
 }

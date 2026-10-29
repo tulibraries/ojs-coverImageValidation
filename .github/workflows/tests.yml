@@ -22,14 +22,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check out the hook dispatcher used by OJS 3.4.0-9
-        uses: actions/checkout@v4
-        with:
-          repository: pkp/pkp-lib
-          ref: f968cdafe19b256df0d649ebcc43399bfb695fee
-          path: .test-deps/ojs/lib/pkp
-          persist-credentials: false
-
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -43,12 +35,7 @@ jobs:
             xargs -0 -n 1 php -l
 
       - name: Run image validation and hook regression tests
-        env:
-          OJS_SOURCE: ${{ github.workspace }}/.test-deps/ojs
         run: php tests/run.php
 
       - name: Verify missing extensions reject unchecked uploads
-        env:
-          OJS_SOURCE: ${{ github.workspace }}/.test-deps/ojs
-          TEST_MISSING_EXTENSIONS: '1'
-        run: php -n tests/run.php
+        run: TEST_MISSING_EXTENSIONS=1 php -n tests/run.php
