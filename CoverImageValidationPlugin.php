@@ -16,8 +16,7 @@ class CoverImageValidationPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         $success = parent::register($category, $path, $mainContextId);
-        // Mandatory protection: register regardless of saved enabled settings.
-        if ($success) {
+        if ($success && $this->getEnabled()) {
             Hook::add('Publication::validate', [$this, 'validateCoverImage']);
             Hook::add('LoadHandler', [$this, 'loadReviewHandler']);
             Hook::add('TemplateManager::display', [$this, 'addReviewLink']);
@@ -30,26 +29,24 @@ class CoverImageValidationPlugin extends GenericPlugin
         return true;
     }
 
-    /** Mandatory protection has no journal or site-level off switch. */
     public function getEnabled($contextId = null)
     {
-        return true;
+        return parent::getEnabled($contextId);
     }
 
     public function getCanEnable()
     {
-        return false;
+        return $this->getCurrentContextId() === 0;
     }
 
     public function getCanDisable()
     {
-        return false;
+        return $this->getCurrentContextId() === 0;
     }
 
     public function setEnabled($enabled)
     {
-        // Also resist direct calls that bypass the plugin-grid capability check.
-        parent::setEnabled(true);
+        parent::setEnabled($enabled);
     }
 
     public function getInstallSitePluginSettingsFile()
