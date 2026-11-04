@@ -18,6 +18,16 @@ The second command verifies refusal of new covers without decoder extensions.
 The harness does not modify OJS source or connect to a database. Fixtures are
 created in a private temporary directory and removed afterward.
 
+The repository also provides a Makefile for repeatable local checks:
+
+```bash
+make check
+make package
+```
+
+`make package` runs the checks first and writes an OJS-ready archive to
+`dist/coverImageValidation-<version>.tar.gz`.
+
 ## Automated checks on GitHub
 
 `.github/workflows/tests.yml` runs syntax checks and the test harness on every

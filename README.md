@@ -1,6 +1,6 @@
 # Cover Image Validation for OJS 3.4.0-9
 
-Custom **site-wide** generic plugin, version 1.4.0.8. No OJS core changes.
+Custom **site-wide** generic plugin, version 1.4.0.9. No OJS core changes.
 Authors upload proposed artwork as an ordinary private submission file. An
 editor opens the submission workflow's **Review cover artwork** action, previews
 the file, and clicks **Approve as cover**. Only then does OJS move a revalidated
@@ -24,12 +24,12 @@ copy into public cover storage and update the publication metadata.
 - Missing PHP GD/Fileinfo rejects new covers instead of accepting unchecked files.
 
 Limits are constants in `CoverImageValidator.php`. There is no settings form.
-Protection is mandatory for **every existing and future journal**. OJS enable/
-disable controls are unavailable, and direct disable calls cannot turn it off.
-Saved site/journal enabled settings do not govern validation. Non-lazy loading
-in version.xml ensures OJS loads the plugin even when a saved setting is false.
-A server administrator can still remove/replace the code or uninstall it; this
-is not protection against administrators who control the deployment.
+Protection applies to **every existing and future journal** while the site-wide
+plugin is enabled. Only a site administrator can enable or disable it from Site
+Administration; journal administrators do not get a journal-level toggle.
+Non-lazy loading in version.xml ensures OJS loads the site-wide plugin so the
+site setting is available. A server administrator can also remove/replace the
+code or uninstall it.
 
 Rejected proposals are removed from the submission's private file history and
 their stored files are deleted through OJS's submission-file repository. Authors
@@ -51,7 +51,7 @@ review. Other plugins must not erase its validation errors.
 2. Extract the archive from the OJS root:
 
    ```bash
-   tar -xzf /path/to/coverImageValidation-1.4.0.8.tar.gz -C plugins/generic
+   tar -xzf /path/to/coverImageValidation-1.4.0.9.tar.gz -C plugins/generic
    ```
 
    The folder must remain `plugins/generic/coverImageValidation`, even if your
@@ -75,7 +75,7 @@ review. Other plugins must not erase its validation errors.
    Use your deployment's PHP executable and application user if different.
    Run once for this new version; if it reports an error, stop and investigate.
    No custom database migration is required; review status uses OJS's existing
-   submission-file settings table. OJS records version 1.4.0.7, with site-wide,
+   submission-file settings table. OJS records version 1.4.0.9, with site-wide,
    non-lazy loading. Existing enabled settings are harmless.
 5. In the QA database, verify:
 
@@ -85,7 +85,7 @@ review. Other plugins must not erase its validation errors.
    WHERE product = 'coverImageValidation' AND `current` = 1;
    ```
 
-   Expect current version **1.4.0.8**, `sitewide=1`, and `lazy_load=0`.
+   Expect current version **1.4.0.9**, `sitewide=1`, and `lazy_load=0`.
    Registration is essential: replacing PHP files alone leaves the old loading
    metadata in the database. There is no enable checkbox to select.
 6. Verify GD and Fileinfo are enabled in PHP-FPM, not only the CLI. If you
@@ -129,8 +129,9 @@ manually granting extra permissions. The previous reproduction used QA journal
    galley workflow in use. Test a second supported locale and image size limits.
 7. **Repeat the direct-API rejection and review approval in a second QA journal
    that has never enabled the plugin individually.** This verifies global coverage.
-8. Verify that Installed Plugins offers no disable control, including for a
-   site administrator. Confirm HTML remains rejected in a second journal.
+8. Verify that journal administrators have no disable control, while a site
+   administrator can disable and re-enable the site-wide plugin. Confirm HTML
+   is rejected in a second journal while the plugin is enabled.
 
 After QA passes, repeat the install/upgrade and database verification on
 production. This change does not establish that the incident is fully resolved.

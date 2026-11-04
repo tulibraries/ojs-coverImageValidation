@@ -45,6 +45,11 @@ namespace PKP\plugins {
         public function getPluginPath() { return $this->path; }
         public function addLocaleData() {}
         public function isSitePlugin() { return false; }
+        public function getCurrentContextId() { return \APP\core\Application::$contextId; }
+        public function getEnabled($contextId = null) {
+            $contextId ??= 0;
+            return (bool) (self::$settings[$contextId]['enabled'] ?? false);
+        }
         public function getSetting($context, $name) { return self::$settings[$context][$name] ?? null; }
         public function updateSetting($context, $pluginName, $value, $type) { self::$settings[$context][$pluginName] = $value; }
         public function setEnabled($enabled) { $this->updateSetting(0, 'enabled', (bool) $enabled, 'bool'); }
@@ -183,7 +188,7 @@ namespace {
         Plugin::$settings = [0 => ['enabled' => true], 11 => ['enabled' => false]];
         $plugin->register('generic', 'plugins/generic/coverImageValidation', 11);
         check($plugin->isSitePlugin(), 'plugin is site-wide');
-        check($plugin->getEnabled(), 'mandatory validation reports enabled despite disabled journal setting');
+        check($plugin->getEnabled() && !$plugin->getEnabled(11), 'site setting controls site-wide plugin status');
         check($plugin->getInstallSitePluginSettingsFile() === 'plugins/generic/coverImageValidation/settings.xml', 'installer receives site defaults file');
         $submissionFileRepository = new TestSubmissionFileRepository();
         Repo::$submissionFileRepository = $submissionFileRepository;
@@ -267,22 +272,28 @@ namespace {
         Application::$user = new TestUser(7, [11 => [\PKP\security\Role::ROLE_ID_SUB_EDITOR]]);
         Hook::clear('Publication::validate');
         $disabled = new CoverImageValidationPlugin();
+        check(!$disabled->getCanDisable() && !$disabled->getCanEnable(), 'journal administrators cannot change site-wide status');
+        Application::$contextId = 0;
+        check($disabled->getCanDisable() && $disabled->getCanEnable(), 'site administrators can change site-wide status');
         $disabled->setEnabled(false);
-        check(Plugin::$settings[0]['enabled'] === true && Plugin::$settings[11]['enabled'] === false, 'direct disable call keeps site enabled');
-        check(!$disabled->getCanDisable(), 'OJS disable endpoint capability is denied');
-        check(!$disabled->getCanEnable(), 'OJS enable toggle is unavailable');
-        Plugin::$settings[0]['enabled'] = false;
-        check($disabled->getEnabled(11) && $disabled->getEnabled(0), 'saved site disable does not change runtime enabled status');
+        check(Plugin::$settings[0]['enabled'] === false, 'site administrator can disable the plugin');
+        check(!$disabled->getEnabled(0), 'disabled site-wide plugin reports disabled');
         Plugin::$settings[11]['enabled'] = true;
         $disabled->register('generic', 'plugins/generic/coverImageValidation', 11);
-        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 'saved site disable cannot bypass validation');
+        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'disabled site-wide plugin does not validate covers');
+        Hook::clear('Publication::validate');
+        Application::$contextId = 11;
+        Plugin::$settings[0]['enabled'] = true;
+        $reenabled = new CoverImageValidationPlugin();
+        $reenabled->register('generic', 'plugins/generic/coverImageValidation', 11);
+        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 're-enabled site-wide plugin validates covers');
         Hook::clear('Publication::validate');
         unset(Plugin::$settings[0]);
         $notInstalled = new CoverImageValidationPlugin();
         $notInstalled->register('generic', 'plugins/generic/coverImageValidation', 11);
-        check(isset(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]])['coverImage']['en']), 'missing site setting cannot bypass validation');
+        check(validateProps(['coverImage' => ['en' => ['temporaryFileId' => 1]]]) === [], 'missing site setting leaves plugin disabled');
         $descriptor = file_get_contents(__DIR__ . '/../version.xml');
-        check(str_contains($descriptor, '<lazy-load>0</lazy-load>') && str_contains($descriptor, '<sitewide>1</sitewide>'), 'descriptor loads site-wide regardless of saved enabled settings');
+        check(str_contains($descriptor, '<lazy-load>0</lazy-load>') && str_contains($descriptor, '<sitewide>1</sitewide>'), 'descriptor loads site-wide');
     } finally {
         foreach (glob($tmp . '/*') as $file) { unlink($file); }
         rmdir($tmp);
